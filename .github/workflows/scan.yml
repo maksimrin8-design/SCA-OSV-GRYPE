@@ -28,6 +28,29 @@ jobs:
             repo: "SasanLabs/VulnerableApp"
           - name: "goof"
             repo: "snyk-labs/nodejs-goof"
+          - name: "bwapp"
+            repo: "raesene/bWAPP"
+          - name: "mutillidae"
+            repo: "webpwnized/mutillidae"
+          - name: "crapi"
+            repo: "OWASP/crAPI"
+          - name: "dv-graphql"
+            repo: "dolevf/Damn-Vulnerable-GraphQL-Application"
+          - name: "nodevulnerable"
+            repo: "OWASP/NodeVulnerable"
+          # --- Новые 6 проектов (до 20) ---
+          - name: "owasp-pygoat"
+            repo: "OWASP/pygoat"
+          - name: "vulnerable-flask-app"
+            repo: "anil-yelken/Vulnerable-Flask-App"
+          - name: "xvwa"
+            repo: "s4n7h0/xvwa"
+          - name: "webgoat-net"
+            repo: "jerryhoff/WebGoat.NET"
+          - name: "vulnerable-otp"
+            repo: "mddanish/Vulnerable-OTP-Application"
+          - name: "vulnado"
+            repo: "vincenzo-veracode/vulnado"
 
     steps:
       - name: Checkout target repository
@@ -80,6 +103,29 @@ jobs:
             repo: "SasanLabs/VulnerableApp"
           - name: "goof"
             repo: "snyk-labs/nodejs-goof"
+          - name: "bwapp"
+            repo: "raesene/bWAPP"
+          - name: "mutillidae"
+            repo: "webpwnized/mutillidae"
+          - name: "crapi"
+            repo: "OWASP/crAPI"
+          - name: "dv-graphql"
+            repo: "dolevf/Damn-Vulnerable-GraphQL-Application"
+          - name: "nodevulnerable"
+            repo: "OWASP/NodeVulnerable"
+          # --- Новые 6 проектов (до 20) ---
+          - name: "owasp-pygoat"
+            repo: "OWASP/pygoat"
+          - name: "vulnerable-flask-app"
+            repo: "anil-yelken/Vulnerable-Flask-App"
+          - name: "xvwa"
+            repo: "s4n7h0/xvwa"
+          - name: "webgoat-net"
+            repo: "jerryhoff/WebGoat.NET"
+          - name: "vulnerable-otp"
+            repo: "mddanish/Vulnerable-OTP-Application"
+          - name: "vulnado"
+            repo: "vincenzo-veracode/vulnado"
 
     steps:
       - name: Checkout target repository
@@ -118,6 +164,7 @@ jobs:
         run: |
           mkdir -p final-output
           
+          # Список всех 20 проектов для скачивания README (эталонов)
           PROJECTS=(
             "juice-shop|juice-shop/juice-shop"
             "webgoat|WebGoat/WebGoat"
@@ -128,6 +175,17 @@ jobs:
             "nodegoat|OWASP/NodeGoat"
             "vulnerableapp|SasanLabs/VulnerableApp"
             "goof|snyk-labs/nodejs-goof"
+            "bwapp|raesene/bWAPP"
+            "mutillidae|webpwnized/mutillidae"
+            "crapi|OWASP/crAPI"
+            "dv-graphql|dolevf/Damn-Vulnerable-GraphQL-Application"
+            "nodevulnerable|OWASP/NodeVulnerable"
+            "owasp-pygoat|OWASP/pygoat"
+            "vulnerable-flask-app|anil-yelken/Vulnerable-Flask-App"
+            "xvwa|s4n7h0/xvwa"
+            "webgoat-net|jerryhoff/WebGoat.NET"
+            "vulnerable-otp|mddanish/Vulnerable-OTP-Application"
+            "vulnado|vincenzo-veracode/vulnado"
           )
           
           for entry in "${PROJECTS[@]}"; do
@@ -143,12 +201,14 @@ jobs:
             curl -sL "https://raw.githubusercontent.com/$repo/master/README.md" -o "final-output/$name/default/reference.md" || true
           done
           
+          # Переносим скачанные JSON-файлы в нужные папки
           for dir in all-results/*; do
             if [ -d "$dir" ]; then
               folder_name=$(basename "$dir")
-              tool="${folder_name%%-*}"
-              project="${folder_name#*-}"
+              tool="${folder_name%%-*}"      # osv или grype
+              project="${folder_name#*-}"    # имя проекта
               
+              # Проверяем, что такая папка проекта была создана
               if [ -d "final-output/$project" ]; then
                 if [ -f "$dir/${tool}-result.json" ]; then
                   cp "$dir/${tool}-result.json" "final-output/$project/$tool/result.json"
