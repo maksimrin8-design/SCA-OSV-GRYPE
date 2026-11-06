@@ -1,0 +1,164 @@
+name: Batch Vulnerability Scan
+
+on:
+  workflow_dispatch:
+
+jobs:
+  scan-osv:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: "juice-shop"
+            repo: "juice-shop/juice-shop"
+          - name: "webgoat"
+            repo: "WebGoat/WebGoat"
+          - name: "dvwa"
+            repo: "digininja/DVWA"
+          - name: "vuln-bookstore"
+            repo: "tobiasbruss/vulnerable-repo"
+          - name: "vulnshop"
+            repo: "nr-yolo/Vulnshop"
+          - name: "railsgoat"
+            repo: "OWASP/railsgoat"
+          - name: "nodegoat"
+            repo: "OWASP/NodeGoat"
+          - name: "vulnerableapp"
+            repo: "SasanLabs/VulnerableApp"
+          - name: "goof"
+            repo: "snyk-labs/nodejs-goof"
+
+    steps:
+      - name: Checkout target repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repo }}
+          token: ${{ secrets.TARGET_REPO_TOKEN }}
+          path: target-repo
+
+      - name: Install OSV Scanner
+        run: |
+          curl -sSfL https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64 -o osv-scanner
+          chmod +x osv-scanner
+          sudo mv osv-scanner /usr/local/bin/
+
+      - name: Run OSV Scanner (JSON)
+        continue-on-error: true
+        run: |
+          cd target-repo
+          osv-scanner scan source -r . --format json --output-file ../osv-result.json || true
+
+      - name: Upload OSV JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: osv-${{ matrix.name }}
+          path: osv-result.json
+          if-no-files-found: warn
+
+  scan-grype:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: "juice-shop"
+            repo: "juice-shop/juice-shop"
+          - name: "webgoat"
+            repo: "WebGoat/WebGoat"
+          - name: "dvwa"
+            repo: "digininja/DVWA"
+          - name: "vuln-bookstore"
+            repo: "tobiasbruss/vulnerable-repo"
+          - name: "vulnshop"
+            repo: "nr-yolo/Vulnshop"
+          - name: "railsgoat"
+            repo: "OWASP/railsgoat"
+          - name: "nodegoat"
+            repo: "OWASP/NodeGoat"
+          - name: "vulnerableapp"
+            repo: "SasanLabs/VulnerableApp"
+          - name: "goof"
+            repo: "snyk-labs/nodejs-goof"
+
+    steps:
+      - name: Checkout target repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repo }}
+          token: ${{ secrets.TARGET_REPO_TOKEN }}
+          path: target-repo
+
+      - name: Install Grype
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Run Grype (JSON)
+        continue-on-error: true
+        run: |
+          grype dir:target-repo -o json --file grype-result.json || true
+
+      - name: Upload Grype JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: grype-${{ matrix.name }}
+          path: grype-result.json
+          if-no-files-found: warn
+
+  merge-results:
+    needs: [scan-osv, scan-grype]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-results
+
+      - name: Restructure and fetch reference READMEs
+        run: |
+          mkdir -p final-output
+          
+          PROJECTS=(
+            "juice-shop|juice-shop/juice-shop"
+            "webgoat|WebGoat/WebGoat"
+            "dvwa|digininja/DVWA"
+            "vuln-bookstore|tobiasbruss/vulnerable-repo"
+            "vulnshop|nr-yolo/Vulnshop"
+            "railsgoat|OWASP/railsgoat"
+            "nodegoat|OWASP/NodeGoat"
+            "vulnerableapp|SasanLabs/VulnerableApp"
+            "goof|snyk-labs/nodejs-goof"
+          )
+          
+          for entry in "${PROJECTS[@]}"; do
+            name="${entry%%|*}"
+            repo="${entry#*|}"
+            
+            mkdir -p "final-output/$name/default"
+            mkdir -p "final-output/$name/osv"
+            mkdir -p "final-output/$name/grype"
+            
+            # Скачиваем README (пробуем ветку main, если нет - master)
+            curl -sL "https://raw.githubusercontent.com/$repo/main/README.md" -o "final-output/$name/default/reference.md" || \
+            curl -sL "https://raw.githubusercontent.com/$repo/master/README.md" -o "final-output/$name/default/reference.md" || true
+          done
+          
+          for dir in all-results/*; do
+            if [ -d "$dir" ]; then
+              folder_name=$(basename "$dir")
+              tool="${folder_name%%-*}"
+              project="${folder_name#*-}"
+              
+              if [ -d "final-output/$project" ]; then
+                if [ -f "$dir/${tool}-result.json" ]; then
+                  cp "$dir/${tool}-result.json" "final-output/$project/$tool/result.json"
+                fi
+              fi
+            fi
+          done
+
+      - name: Upload Final Structure
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-vulnerability-report
+          path: final-output/
