@@ -10,6 +10,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # --- Базовые проекты ---
           - name: "juice-shop"
             repo: "juice-shop/juice-shop"
           - name: "webgoat"
@@ -37,12 +38,11 @@ jobs:
           - name: "dv-graphql"
             repo: "dolevf/Damn-Vulnerable-GraphQL-Application"
           - name: "nodevulnerable"
-            repo: "OWASP/NodeVulnerable"
-          # --- Новые 6 проектов (до 20) ---
+            repo: "cr0hn/vulnerable-node"
           - name: "owasp-pygoat"
-            repo: "OWASP/pygoat"
+            repo: "adeyosemanputra/pygoat"
           - name: "vulnerable-flask-app"
-            repo: "anil-yelken/Vulnerable-Flask-App"
+            repo: "videvelopers/Vulnerable-Flask-App"
           - name: "xvwa"
             repo: "s4n7h0/xvwa"
           - name: "webgoat-net"
@@ -51,6 +51,27 @@ jobs:
             repo: "mddanish/Vulnerable-OTP-Application"
           - name: "vulnado"
             repo: "vincenzo-veracode/vulnado"
+          - name: "dvna"
+            repo: "appsecco/dvna"
+          - name: "dsvw"
+            repo: "stamparm/DSVW"
+          - name: "vulnerable-rest-api"
+            repo: "mattvaldes/vulnerable-api"
+          - name: "owasp-vwad"
+            repo: "OWASP/OWASP-VWAD"
+          - name: "vulnerable-node-2"
+            repo: "snyk-labs/nodejs-goof"
+          # --- Новые 5 проектов ---
+          - name: "vulnerable-spring-petclinic"
+            repo: "Contrast-Security-OSS/vulnerable-spring-petclinic"
+          - name: "vuln-spring-sast"
+            repo: "jo-0412/vuln-spring-sast-practice"
+          - name: "py-reach-demo"
+            repo: "Super-Vulnerable-Org/py-reach-demo"
+          - name: "vulnerable-demo-app"
+            repo: "fomi009/vulnerable-demo-app"
+          - name: "capstone-spring"
+            repo: "vurs/capstone-test-website-spring"
 
     steps:
       - name: Checkout target repository
@@ -85,6 +106,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # --- Базовые проекты (тот же список) ---
           - name: "juice-shop"
             repo: "juice-shop/juice-shop"
           - name: "webgoat"
@@ -112,12 +134,11 @@ jobs:
           - name: "dv-graphql"
             repo: "dolevf/Damn-Vulnerable-GraphQL-Application"
           - name: "nodevulnerable"
-            repo: "OWASP/NodeVulnerable"
-          # --- Новые 6 проектов (до 20) ---
+            repo: "cr0hn/vulnerable-node"
           - name: "owasp-pygoat"
-            repo: "OWASP/pygoat"
+            repo: "adeyosemanputra/pygoat"
           - name: "vulnerable-flask-app"
-            repo: "anil-yelken/Vulnerable-Flask-App"
+            repo: "videvelopers/Vulnerable-Flask-App"
           - name: "xvwa"
             repo: "s4n7h0/xvwa"
           - name: "webgoat-net"
@@ -126,6 +147,27 @@ jobs:
             repo: "mddanish/Vulnerable-OTP-Application"
           - name: "vulnado"
             repo: "vincenzo-veracode/vulnado"
+          - name: "dvna"
+            repo: "appsecco/dvna"
+          - name: "dsvw"
+            repo: "stamparm/DSVW"
+          - name: "vulnerable-rest-api"
+            repo: "mattvaldes/vulnerable-api"
+          - name: "owasp-vwad"
+            repo: "OWASP/OWASP-VWAD"
+          - name: "vulnerable-node-2"
+            repo: "snyk-labs/nodejs-goof"
+          # --- Новые 5 проектов ---
+          - name: "vulnerable-spring-petclinic"
+            repo: "Contrast-Security-OSS/vulnerable-spring-petclinic"
+          - name: "vuln-spring-sast"
+            repo: "jo-0412/vuln-spring-sast-practice"
+          - name: "py-reach-demo"
+            repo: "Super-Vulnerable-Org/py-reach-demo"
+          - name: "vulnerable-demo-app"
+            repo: "fomi009/vulnerable-demo-app"
+          - name: "capstone-spring"
+            repo: "vurs/capstone-test-website-spring"
 
     steps:
       - name: Checkout target repository
@@ -164,7 +206,7 @@ jobs:
         run: |
           mkdir -p final-output
           
-          # Список всех 20 проектов для скачивания README (эталонов)
+          # Список всех 30 проектов для скачивания README (эталонов)
           PROJECTS=(
             "juice-shop|juice-shop/juice-shop"
             "webgoat|WebGoat/WebGoat"
@@ -179,13 +221,23 @@ jobs:
             "mutillidae|webpwnized/mutillidae"
             "crapi|OWASP/crAPI"
             "dv-graphql|dolevf/Damn-Vulnerable-GraphQL-Application"
-            "nodevulnerable|OWASP/NodeVulnerable"
-            "owasp-pygoat|OWASP/pygoat"
-            "vulnerable-flask-app|anil-yelken/Vulnerable-Flask-App"
+            "nodevulnerable|cr0hn/vulnerable-node"
+            "owasp-pygoat|adeyosemanputra/pygoat"
+            "vulnerable-flask-app|videvelopers/Vulnerable-Flask-App"
             "xvwa|s4n7h0/xvwa"
             "webgoat-net|jerryhoff/WebGoat.NET"
             "vulnerable-otp|mddanish/Vulnerable-OTP-Application"
             "vulnado|vincenzo-veracode/vulnado"
+            "dvna|appsecco/dvna"
+            "dsvw|stamparm/DSVW"
+            "vulnerable-rest-api|mattvaldes/vulnerable-api"
+            "owasp-vwad|OWASP/OWASP-VWAD"
+            "vulnerable-node-2|snyk-labs/nodejs-goof"
+            "vulnerable-spring-petclinic|Contrast-Security-OSS/vulnerable-spring-petclinic"
+            "vuln-spring-sast|jo-0412/vuln-spring-sast-practice"
+            "py-reach-demo|Super-Vulnerable-Org/py-reach-demo"
+            "vulnerable-demo-app|fomi009/vulnerable-demo-app"
+            "capstone-spring|vurs/capstone-test-website-spring"
           )
           
           for entry in "${PROJECTS[@]}"; do
@@ -208,7 +260,6 @@ jobs:
               tool="${folder_name%%-*}"      # osv или grype
               project="${folder_name#*-}"    # имя проекта
               
-              # Проверяем, что такая папка проекта была создана
               if [ -d "final-output/$project" ]; then
                 if [ -f "$dir/${tool}-result.json" ]; then
                   cp "$dir/${tool}-result.json" "final-output/$project/$tool/result.json"
