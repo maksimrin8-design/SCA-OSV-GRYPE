@@ -35,6 +35,11 @@ jobs:
       matrix:
         project: ${{ fromJson(needs.prepare.outputs.matrix) }}
     steps:
+      - name: Checkout benchmark
+        uses: actions/checkout@v4
+        with:
+          path: benchmark
+
       - name: Checkout upstream project
         uses: actions/checkout@v4
         with:
@@ -44,54 +49,70 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Record exact source revision and dependency manifests
+      - name: Prepare application evidence structure
         shell: bash
         run: |
-          mkdir -p scan-output
-          git -C target-repo rev-parse HEAD > scan-output/commit.txt
-          git -C target-repo remote get-url origin > scan-output/upstream.txt
-          find target-repo -type f | grep -E '/(package-lock\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|pom\.xml|gradle\.lockfile|requirements[^/]*\.txt|Pipfile\.lock|poetry\.lock|uv\.lock|go\.mod|go\.sum|Cargo\.lock|Gemfile\.lock|composer\.lock)$' | sort > scan-output/dependency-files.txt || true
-          cat > scan-output/project.json <<EOF
+          APP="application/${{ matrix.project.name }}"
+          mkdir -p "$APP/osv" "$APP/grype" "$APP/default"
+          git -C target-repo rev-parse HEAD > "$APP/upstream-commit.txt"
+          git -C target-repo remote get-url origin > "$APP/upstream.txt"
+          find target-repo -type f | grep -E '/(package-lock\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|pom\.xml|gradle\.lockfile|requirements[^/]*\.txt|Pipfile\.lock|poetry\.lock|uv\.lock|go\.mod|go\.sum|Cargo\.lock|Gemfile\.lock|composer\.lock)$' | sort > "$APP/dependency-files.txt" || true
+          cat > "$APP/project.json" <<EOF
           {"project_id":"${{ matrix.project.id }}","name":"${{ matrix.project.name }}","repository":"${{ matrix.project.repo }}","requested_ref":"${{ matrix.project.ref }}"}
           EOF
+          python - "$APP/default/reference.json" "${{ matrix.project.id }}" benchmark/ground-truth/expected-vulnerabilities.csv <<'PY'
+          import csv, json, sys
+          output, project_id, csv_path = sys.argv[1:]
+          with open(csv_path, newline="", encoding="utf-8") as f:
+              rows = [r for r in csv.DictReader(f) if r["project_id"] == project_id and r["status"].strip().lower() == "verified"]
+          payload = {
+              "project_id": project_id,
+              "reference_status": "verified_entries_present" if rows else "not_yet_adjudicated",
+              "note": "An empty list means no independently verified entries are currently curated; it does not mean the project has no vulnerable dependencies.",
+              "vulnerabilities": rows
+          }
+          with open(output, "w", encoding="utf-8") as f:
+              json.dump(payload, f, indent=2, ensure_ascii=False)
+              f.write("\n")
+          PY
 
       - name: Install OSV-Scanner
         run: |
           curl -sSfL https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64 -o osv-scanner
           chmod +x osv-scanner
           sudo install osv-scanner /usr/local/bin/osv-scanner
-          osv-scanner --version | tee scan-output/osv-version.txt
+          osv-scanner --version | tee application/${{ matrix.project.name }}/osv/version.txt
 
       - name: Run OSV-Scanner
         shell: bash
         run: |
           set +e
-          osv-scanner scan source -r target-repo --format json --output-file scan-output/osv-result.json
+          osv-scanner scan source -r target-repo --format json --output-file application/${{ matrix.project.name }}/osv/result.json
           code=$?
           set -e
-          echo "$code" > scan-output/osv-exit-code.txt
-          test -s scan-output/osv-result.json || echo '{"results":[]}' > scan-output/osv-result.json
+          echo "$code" > application/${{ matrix.project.name }}/osv/exit-code.txt
+          test -s application/${{ matrix.project.name }}/osv/result.json || echo '{"results":[]}' > application/${{ matrix.project.name }}/osv/result.json
 
       - name: Install Grype
         run: |
           curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
-          grype version | tee scan-output/grype-version.txt
+          grype version | tee application/${{ matrix.project.name }}/grype/version.txt
 
       - name: Run Grype
         shell: bash
         run: |
           set +e
-          grype dir:target-repo -o json --file scan-output/grype-result.json
+          grype dir:target-repo -o json --file application/${{ matrix.project.name }}/grype/result.json
           code=$?
           set -e
-          echo "$code" > scan-output/grype-exit-code.txt
-          test -s scan-output/grype-result.json || echo '{"matches":[]}' > scan-output/grype-result.json
+          echo "$code" > application/${{ matrix.project.name }}/grype/exit-code.txt
+          test -s application/${{ matrix.project.name }}/grype/result.json || echo '{"matches":[]}' > application/${{ matrix.project.name }}/grype/result.json
 
-      - name: Upload per-project evidence
+      - name: Upload structured application evidence
         uses: actions/upload-artifact@v4
         with:
           name: scan-${{ matrix.project.id }}-${{ matrix.project.name }}
-          path: scan-output/
+          path: application/
           if-no-files-found: error
           retention-days: 30
 
@@ -101,19 +122,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Download scan evidence
+      - name: Download per-application evidence
         uses: actions/download-artifact@v4
         with:
           pattern: scan-*
           path: all-results
           merge-multiple: false
-      - name: Compare only verified ground truth
+      - name: Build the single SCA comparison table
         run: |
-          python scripts/compare_ground_truth.py \
+          python scripts/build_sca_table.py \
             --results-dir all-results \
             --ground-truth ground-truth/expected-vulnerabilities.csv \
             --output-dir comparison
-      - name: Upload comparison and provenance
+      - name: Upload SCA table and evidence index
         uses: actions/upload-artifact@v4
         with:
           name: sca-benchmark-comparison
