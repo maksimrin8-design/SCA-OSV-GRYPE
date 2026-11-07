@@ -1,0 +1,2 @@
+project_id,package,version,ecosystem,vulnerability_id,status,evidence_url,notes
+P001,minimist,0.0.8,npm,GHSA-xvch-5gv4-984h,verified,https://github.com/coder/osv-test/blob/main/fixtures/vulnerable/package-lock.json,"Pinned in the committed fixture lockfile; advisory: https://github.com/advisories/GHSA-xvch-5gv4-984h"
