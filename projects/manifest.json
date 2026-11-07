@@ -7,7 +7,7 @@
       "id": "P001",
       "name": "osv-test",
       "repo": "coder/osv-test",
-      "ref": "main",
+      "ref": "18c46d1b2a0119ff94e910e0b305819b763a4e79",
       "ecosystem": "npm",
       "role": "known-vulnerable-fixture",
       "evidence": "fixtures/vulnerable/package-lock.json"
