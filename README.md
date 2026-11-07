@@ -28,8 +28,8 @@
 Сейчас подтверждён один тестовый случай:
 
 - `coder/osv-test`, `minimist@0.0.8`, npm
-- `GHSA-xvch-5gv4-984h` / `CVE-2021-44906`
-- исходный lockfile: https://github.com/coder/osv-test/blob/main/fixtures/vulnerable/package-lock.json
+- `GHSA-xvch-5gv4-984h` / `CVE-2021-44906` (оба идентификатора сопоставляются как aliases одного advisory)
+- исходный lockfile: https://github.com/coder/osv-test/blob/18c46d1b2a0119ff94e910e0b305819b763a4e79/fixtures/vulnerable/package-lock.json
 - advisory: https://github.com/advisories/GHSA-xvch-5gv4-984h
 
 Остальные проекты — кандидаты на сканирование, их expected vulnerabilities пока не объявляются подтверждёнными. До независимой проверки конкретного lockfile и диапазона версий advisory нельзя добавлять уязвимость в CSV со статусом `verified`.
